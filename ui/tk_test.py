@@ -49,8 +49,8 @@ def edge_detect():
 
 
 e = tk.StringVar()
-e_entry = tk.Entry(win, width=68, textvariable=e)
-e_entry.pack()
+# e_entry = tk.Entry(win, width=68, textvariable=e)
+# e_entry.pack()
 
 button1 = tk.Button(win, text ="Select An Image", command = choose_file, font=("Arial", 13), 
                     fg="black", bg="blue", 
