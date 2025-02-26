@@ -43,5 +43,5 @@ Run the code
 python3 tk_test.py
 ```
 
-![Current UI Demo](/demo.png "Current UI Demo")
+![Current UI Demo](/demo_edge_detect.png "Current UI Demo")
 
