@@ -7,9 +7,10 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 from torch.autograd import Variable
-
+from torchvision.transforms import ToPILImage
 from models import *
 from canny import processing
+from models_generatorUNet import *
 # from picture2texture import estimate
 
 
@@ -25,8 +26,9 @@ def sample_images(generator,Tensor,imgs):
     real_A = Variable(imgs.type(Tensor))
     real_A = real_A.unsqueeze(0)
     fake_B = generator(real_A)
-    cv2.imwrite("generate.png" ,255*fake_B[0].squeeze(0).cpu().swapaxes(0,2).swapaxes(0,1).numpy())
-
+    # cv2.imwrite("generate.png" ,255*fake_B[0].squeeze(0).cpu().swapaxes(0,2).swapaxes(0,1).numpy())
+    cv2.imwrite("generate.png", 255 * fake_B[0].squeeze(0).cpu().detach().swapaxes(0, 2).swapaxes(0, 1).numpy())
+    
 # def process(opt,file_path):
 #     """
 #     get the HED edge-painting
@@ -61,6 +63,55 @@ def main(path):
     # train_data = pic1+pic2
     # cv2.imwrite("canny&HED.jpg",train_data) #得到二者叠加
 
+def load_image(image_path, load_size, crop_size):
+    """加载单张图片并进行预处理"""
+    transform = transforms.Compose([
+        transforms.Resize(load_size),
+        transforms.CenterCrop(crop_size),
+        transforms.ToTensor(),
+        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    image = Image.open(image_path).convert('RGB')
+    return transform(image).unsqueeze(0)  # 添加batch维度
+
+def model_cycleGAN(file_name):
+    image_tensor = load_image(file_name, 512, 512)
+    # print(image_tensor)
+    print(f"File path: {file_name}")
+    load = Image.open(file_name)
+    print(f"Loaded image: {load}")
+
+    model = create_model(gpu_ids='', isTrain=False, name='latest_net_G', model='test')
+    # 加载预训练的权重（使用 BaseModel 的 load_networks 方法）
+    model.load_networks('latest')  # 假设权重文件名为 latest_net_*.pth
+
+    # 设置模型，确保运行在 CPU 上
+    model.setup()
+
+    # 移动生成器到设备（CPU）
+    if hasattr(model, 'netG'):  # 检查是否有 netG_A 属性
+        model.netG.to(model.device)
+    else:
+        raise AttributeError("The model does not have a 'netG' attribute.")
+    
+    # 设置输入并进行推理
+    model.set_input({'A': image_tensor, 'A_paths': file_name})
+    model.test()
+
+    visuals = model.get_current_visuals()
+    fake_image = visuals['fake']
+    tensor = fake_image.squeeze(0)
+
+    # 2. 确保值在 [0, 1] 范围内
+    if tensor.max() > 1.0:
+        tensor = tensor / 255.0
+    tensor = tensor * 0.5 + 0.5
+    tensor = torch.clamp(tensor, 0, 1) 
+    # 3. 转换为 PIL 图像
+    to_pil = ToPILImage()
+    image = to_pil(tensor.squeeze(0).cpu()) 
+    image.save('generate1.png')
+
 def model():
     parser = argparse.ArgumentParser()
     parser.add_argument("--img_height", type=int, default=512, help="size of image height")
@@ -75,7 +126,8 @@ def model():
     generator = GeneratorUNet()
     if cuda:
         generator = generator.cuda() #使用gpu
-    generator.load_state_dict(torch.load("generator_45_canny.pth"))
+        
+    generator.load_state_dict(torch.load("./checkpoints/generator_45_canny.pth", map_location='cpu'))
     Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
     train_data = cv2.imread("canny.jpg")
     frame = cv2.resize(train_data,(opt.img_width,opt.img_height))
