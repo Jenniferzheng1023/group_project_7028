@@ -1,9 +1,17 @@
 
 import tkinter as tk
 import tkinter.filedialog
+from tqdm import tqdm
+from torchvision.transforms import ToPILImage
 from PIL import Image, ImageTk
 from torchvision import transforms as transforms
 from test import main, model
+from data import create_dataset
+from models import create_model
+import cv2 as cv
+import os
+import torch
+
 # 创建UI
 win = tk.Tk()
 win.title("picture process")
@@ -48,6 +56,61 @@ def edge_detect():
     img2.place(x=800,y=100)
 
 
+def load_image(image_path, load_size, crop_size):
+    """加载单张图片并进行预处理"""
+    transform = transforms.Compose([
+        transforms.Resize(load_size),
+        transforms.CenterCrop(crop_size),
+        transforms.ToTensor(),
+        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    image = Image.open(image_path).convert('RGB')
+    return transform(image).unsqueeze(0)  # 添加batch维度
+
+def cycleganst():
+    
+    image_tensor = load_image(file_name, 512, 512)
+    print(image_tensor)
+    print(f"File path: {file_name}")
+    load = Image.open(file_name)
+    print(f"Loaded image: {load}")
+
+    model = create_model(gpu_ids='', isTrain=False, name='latest_net_G', model='test')
+    # 加载预训练的权重（使用 BaseModel 的 load_networks 方法）
+    model.load_networks('latest')  # 假设权重文件名为 latest_net_*.pth
+
+    # 设置模型，确保运行在 CPU 上
+    model.setup()
+
+    # 移动生成器到设备（CPU）
+    if hasattr(model, 'netG'):  # 检查是否有 netG_A 属性
+        model.netG.to(model.device)
+    else:
+        raise AttributeError("The model does not have a 'netG' attribute.")
+    
+    # 设置输入并进行推理
+    model.set_input({'A': image_tensor, 'A_paths': file_name})
+    model.test()
+
+    visuals = model.get_current_visuals()
+    fake_image = visuals['fake']
+    tensor = fake_image.squeeze(0)
+
+    # 2. 确保值在 [0, 1] 范围内
+    if tensor.max() > 1.0:
+        tensor = tensor / 255.0
+
+    # 3. 转换为 PIL 图像
+    image = ToPILImage()(tensor)
+    # 将 PIL 图像转换为 Tkinter 支持的 PhotoImage 对象
+    tk_image = ImageTk.PhotoImage(image)
+
+    # 显示生成的图片
+    global img3
+    img3 = tk.Label(win, image=tk_image)
+    img3.image = tk_image  # 防止垃圾回收
+    img3.place(x=700, y=100)
+
 e = tk.StringVar()
 # e_entry = tk.Entry(win, width=68, textvariable=e)
 # e_entry.pack()
@@ -65,6 +128,13 @@ button2 = tkinter.Button(win, text="edge detect" , command = edge_detect,width=1
                         activebackground="green", 
                         activeforeground="yellow",)
 button2.place(x=570,y=200)
+
+button2 = tkinter.Button(win, text="CycleGAN" , command = cycleganst,width=10, height =2,
+                        font=("Arial", 13), 
+                        fg="black", bg="blue", 
+                        activebackground="green", 
+                        activeforeground="yellow",)
+button2.place(x=570,y=100)
 
 label1 = tk.Label(win,text="Original Picture", font=("Arial", 14), bg='lightgray', fg='black')
 label1.place(x=250,y=50)
