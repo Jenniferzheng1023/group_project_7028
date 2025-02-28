@@ -21,6 +21,8 @@ def find_model_using_name(model_name):
 
 
 # def create_model(gpu_ids='0', isTrain=True, checkpoints_dir='./checkpoints', name='experiment_name', continue_train=False, model='cycle_gan'):
+# ! This function is used to create a model instance
+# ! The model path is here
 def create_model(gpu_ids='', isTrain=True, checkpoints_dir='./checkpoints', name='experiment_name', continue_train=False, model='cycle_gan'):
     model = find_model_using_name(model)
     instance = model(gpu_ids=gpu_ids, isTrain=isTrain, checkpoints_dir=checkpoints_dir, name=name, continue_train=continue_train)

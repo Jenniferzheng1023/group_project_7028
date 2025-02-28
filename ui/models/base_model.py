@@ -13,10 +13,10 @@ class BaseModel(ABC):
 
         """
         gpu_ids = []
-        if gpu_ids:  # 检查 gpu_ids 是否为空
+        if gpu_ids:  #  check gpu_ids is not None
             str_ids = gpu_ids.split(',')
             for str_id in str_ids:
-                if str_id.strip():  # 跳过空字符串
+                if str_id.strip():  # check str_id is not empty
                     id = int(str_id)
                     if id >= 0:
                         gpu_ids.append(id)
@@ -33,7 +33,7 @@ class BaseModel(ABC):
         if len(gpu_ids) > 0 and torch.cuda.is_available():
             torch.cuda.set_device(gpu_ids[0])
         else:
-            gpu_ids = []  # 如果没有可用的GPU，清空gpu_ids
+            gpu_ids = []  # if there is no gpu, set gpu_ids to empty list
         
         self.gpu_ids = gpu_ids
         self.isTrain = isTrain
