@@ -122,6 +122,55 @@ def model_cycleGAN(file_name):
     image = to_pil(tensor.squeeze(0).cpu()) 
     image.save('generate1.png')
 
+def load_image(image_path, load_size, crop_size):
+    """加载单张图片并进行预处理"""
+    transform = transforms.Compose([
+        transforms.Resize(load_size),
+        transforms.CenterCrop(crop_size),
+        transforms.ToTensor(),
+        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    image = Image.open(image_path).convert('RGB')
+    return transform(image).unsqueeze(0)  # 添加batch维度
+
+def model_cycleGAN(file_name):
+    image_tensor = load_image(file_name, 512, 512)
+    # print(image_tensor)
+    print(f"File path: {file_name}")
+    load = Image.open(file_name)
+    print(f"Loaded image: {load}")
+
+    model = create_model(gpu_ids='', isTrain=False, name='latest_net_G', model='test')
+    # 加载预训练的权重（使用 BaseModel 的 load_networks 方法）
+    model.load_networks('latest')  # 假设权重文件名为 latest_net_*.pth
+
+    # 设置模型，确保运行在 CPU 上
+    model.setup()
+
+    # 移动生成器到设备（CPU）
+    if hasattr(model, 'netG'):  # 检查是否有 netG_A 属性
+        model.netG.to(model.device)
+    else:
+        raise AttributeError("The model does not have a 'netG' attribute.")
+    
+    # 设置输入并进行推理
+    model.set_input({'A': image_tensor, 'A_paths': file_name})
+    model.test()
+
+    visuals = model.get_current_visuals()
+    fake_image = visuals['fake']
+    tensor = fake_image.squeeze(0)
+
+    # 2. 确保值在 [0, 1] 范围内
+    if tensor.max() > 1.0:
+        tensor = tensor / 255.0
+    tensor = tensor * 0.5 + 0.5
+    tensor = torch.clamp(tensor, 0, 1) 
+    # 3. 转换为 PIL 图像
+    to_pil = ToPILImage()
+    image = to_pil(tensor.squeeze(0).cpu()) 
+    image.save('generate1.png')
+
 def model():
     parser = argparse.ArgumentParser()
     parser.add_argument("--img_height", type=int, default=512, help="size of image height")
