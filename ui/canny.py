@@ -8,8 +8,8 @@ sys.setrecursionlimit(100000)
 
 def smooth(image, sigma = 1.4, length = 5):
     """ 
-    利用高斯核进行平滑处理
-
+    Using gaussian filter to smooth the image
+    
     Args:
         image: array of grey image
         sigma: the sigma of gaussian filter, default to be 1.4
@@ -18,23 +18,23 @@ def smooth(image, sigma = 1.4, length = 5):
     Returns:
         the smoothed image
     """
-    # 计算高斯核
+    # create gaussian kernel
     k = length // 2
     gaussian = np.zeros([length, length])
     for i in range(length):
         for j in range(length):
             gaussian[i, j] = np.exp(-((i-k) ** 2 + (j-k) ** 2) / (2 * sigma ** 2))
     gaussian /= 2 * np.pi * sigma ** 2
-    # Batch 归一化
+    # Batch normalization
     gaussian = gaussian / np.sum(gaussian)
 
-    # 使用高斯核
+    # using convolution to smooth the image
     W, H = image.shape
     new_image = np.zeros([W - k * 2, H - k * 2])
 
     for i in range(W - 2 * k):
         for j in range(H - 2 * k):
-            # 卷积运算
+            # convolution calculation
             new_image[i, j] = np.sum(image[i:i+length, j:j+length] * gaussian)
 
     new_image = np.uint8(new_image)
@@ -42,8 +42,7 @@ def smooth(image, sigma = 1.4, length = 5):
 
 def get_gradient_and_direction(image):
     """ 
-    利用sobel算子计算梯度和方向
-
+    Using sobel operator to calculate the gradients and directions
     Args:
         image: array of grey image
 
@@ -73,7 +72,7 @@ def get_gradient_and_direction(image):
 
 def NMS(gradients, direction):
     """ 
-    非极大值抑制
+    Using Non-maximum suppression to suppress the gradients
 
     Args:
         gradients: the gradients of each pixel
@@ -119,7 +118,7 @@ def NMS(gradients, direction):
 
 def double_threshold(nms, threshold1, threshold2):
     """ 
-    两个边界计算
+    Two thresholds calculation
 
     Args:
         nms: the input image
@@ -166,9 +165,31 @@ def double_threshold(nms, threshold1, threshold2):
                 output_image[w, h] = 0
     return output_image
 
+def enhancement(img):
+    """
+    enhance the image
+    Args:
+        img: the input image
+
+    Returns:
+        the output image
+    """
+    Imin, Imax = cv.minMaxLoc(img)[:2]
+    # 使用numpy计算
+    # Imax = np.max(img)
+    # Imin = np.min(img)
+    Omin, Omax = 0, 255
+    # 计算a和b的值
+    a = float(Omax - Omin) / (Imax - Imin)
+    b = Omin - a * Imin
+    out = a * img + b
+    out = out.astype(np.uint8)
+    return out
+
 def processing(img_path):
 
     image = cv.imread(img_path,0)
+    image = enhancement(image)
     smoothed_image = smooth(image)
     gradients, direction = get_gradient_and_direction(smoothed_image)
     nms = NMS(gradients, direction)
@@ -177,22 +198,12 @@ def processing(img_path):
     return output_image
 
 def main(input_path, output_path):
-    '''
-    主函数
-    '''
     files_path = []
     for label in glob.glob(f"{input_path}/*"):
         files_path.append(label)
-    # for label in sorted(os.listdir(input_path)): #label：来源哪个数据集
-    #     for fname in os.listdir(os.path.join(input_path, label)):
-    #         files_path.append(os.path.join(input_path, label, fname)) #图片的文件名
 
     for file_path in files_path:
-        # all = file_path.split("\\")
-        # label = all[-2] #获取数据集名，如met-1
-        # fname = all[-1] #获取文件名，如met_0.jpg
         out = os.path.join(output_path, file_path.split("/")[-1])
-        # arguments_strOut = os.path.join(output_path, label, fname)
         print(file_path)
         image = processing(file_path)
         # img2 = image[:,:,::-1]
@@ -201,23 +212,8 @@ def main(input_path, output_path):
         cv.imwrite(out,image)
     
 
-    # files_path = []
-    # for label in sorted(os.listdir(input_path)): #label：来源哪个数据集
-    #     for fname in os.listdir(os.path.join(input_path, label)):
-    #         files_path.append(os.path.join(input_path, label, fname)) #图片的文件名
-
-    # for file_path in files_path:
-    #     all = file_path.split("\\")
-    #     label = all[-2] #获取数据集名，如met-1
-    #     fname = all[-1] #获取文件名，如met_0.jpg
-    #     arguments_strOut = os.path.join(output_path, label, fname)
-
-    #     image = processing(file_path)
-    #     cv.imwrite(arguments_strOut,image)
-
-
 if __name__ == "__main__":
     
-    input_path = "./test_image 2" #输入路径
-    output_path = "./canny_pic" #输出路径
+    input_path = "./test_image 2" 
+    output_path = "./canny_pic"
     main(input_path, output_path)
