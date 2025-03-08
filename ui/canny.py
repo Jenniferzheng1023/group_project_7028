@@ -165,9 +165,26 @@ def double_threshold(nms, threshold1, threshold2):
                 output_image[w, h] = 0
     return output_image
 
+def enhancement(img):
+    '''图像增强算法：直方图均衡化'''
+    # 计算原图中出现的最小灰度级和最大灰度级
+    # 使用函数计算
+    Imin, Imax = cv.minMaxLoc(img)[:2]
+    # 使用numpy计算
+    # Imax = np.max(img)
+    # Imin = np.min(img)
+    Omin, Omax = 0, 255
+    # 计算a和b的值
+    a = float(Omax - Omin) / (Imax - Imin)
+    b = Omin - a * Imin
+    out = a * img + b
+    out = out.astype(np.uint8)
+    return out
+
 def processing(img_path):
 
     image = cv.imread(img_path,0)
+    image = enhancement(image)
     smoothed_image = smooth(image)
     gradients, direction = get_gradient_and_direction(smoothed_image)
     nms = NMS(gradients, direction)

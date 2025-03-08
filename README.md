@@ -37,11 +37,36 @@ $ sudo apt-get install python3-tk
 ```
 
 ## Step 3
+Putting the model into a checkpoints file with following sturcture
+```
+checkpoints
+├── lastest_net_G
+│   └── lastest_net_G.pth
+├── lastest_net_G_flowers
+│   └── lastest_net_G.pth
+└── lastest_net_G_nonchar
+│   └── lastest_net_G.pth
+└── generator_45_canny.pth
+```
 
-Run the code
+If you want to train the model please use
+```shell
+python3 train.py
+```
+
+## Step 4
+Run the code to show the final generator result
+
 ```shell
 python3 tk_test.py
 ```
 
-![Current UI Demo](/demo_edge_detect.png "Current UI Demo")
+![Current UI Demo](/demo.png "Current UI Demo")
 
+Here is some explain for the button in the UI
+
+- `Edge Detect`: Gain the edge line picture for the input image
+- `Photo`: Generating the Chinese style painting using 5he original pre-trained model
+- `Flower Photo`: Generating flower and bird style painting will be more colorful and bright
+- `Nonchar Photo`: Comparing with original generated painting, we removed character in the generated graph
+- `Other Type`: It can convert not only photo, but also paintings and edge draft lines
