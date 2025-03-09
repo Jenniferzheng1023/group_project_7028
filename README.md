@@ -1,5 +1,7 @@
 # group_project_7028
 
+Our project main function is to generate the Chinese style painting. So far, we can convert photo (landscape, flower and bird), edge line draft, and other style painting to the Chinese style painting.
+
 ## Step 1
 
 ```shell
@@ -7,7 +9,7 @@ cd ./ui
 ```
 
 ## Step 2
-In stall requirement package
+Install requirement package
 
 ```shell
 pip install requirements.txt
@@ -18,25 +20,38 @@ For mac
 ```shell
 $ brew install python-tk
 ```
-After use the brew to install but not work for other package like pillow. You can try following to create the venv environment
+After use the brew to install but not work for other package like `pillow`. You can try following to create the venv environment
 
 ```shell
-python3 -m venv myenv # create the venv called myenv
+python3 -m venv myenv 
+# create the venv called myenv
 ```
 
 ```shell
 source myenv/bin/activate #activate the venv
 ```
-``` shell
-python3 -m pip install requirements.txt #try to reinstall the require package
+or
+
+```shell
+conda create --name <myenv> # create a new conda env
 ```
 
+Install other required packages for our project
+
+``` shell
+python3 -m pip install requirements.txt 
+# try to install all required packages
+```
+---
 For linux
 ```shell
 $ sudo apt-get install python3-tk
 ```
 
 ## Step 3
+
+Our models and dataset: [Google Drive](https://drive.google.com/drive/folders/1cofnlgMdhURPpFCfaryP-wl1sUuUjo35)
+
 
 Run the code
 Putting the model into a checkpoints file with following sturcture
@@ -50,6 +65,8 @@ checkpoints
 │   └── lastest_net_G.pth
 └── generator_45_canny.pth
 ```
+
+
 
 If you want to train the model please use
 ```shell
@@ -72,3 +89,28 @@ Here is some explain for the button in the UI
 - `Flower Photo`: Generating flower and bird style painting will be more colorful and bright
 - `Nonchar Photo`: Comparing with original generated painting, we removed character in the generated graph
 - `Other Type`: It can convert not only photo, but also paintings and edge draft lines
+
+
+---
+
+### Fine tune
+The following steps are used to run the fine tune.
+
+```shell
+cd ./ui/finetune
+```
+
+Run:
+
+```shell
+python3 finetune.py --dataroot ./datasets/dataset1 --pretrain_path /mnt/latest_net_G.pth --checkpoints_dir ./checkpoints 
+```
+
+Explanation for above runing code:
+
+`--dataroot` add the dataset path 
+
+`--pretrain_path` add the pretrained model path
+
+`--checkpoints_dir` add the save model checkpoints path
+
